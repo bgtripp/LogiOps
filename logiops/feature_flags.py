@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -28,36 +29,46 @@ _FLAG_OVERRIDES: dict[str, bool] = {
 # Unleash SDK client (lazy-initialised)
 # ---------------------------------------------------------------------------
 _unleash_client = None  # type: ignore[assignment]
+_init_lock = threading.Lock()
 
 
 def _get_unleash_client():
-    """Return the shared UnleashClient, initialising on first call."""
+    """Return the shared UnleashClient, initialising on first call.
+
+    Uses double-checked locking to prevent duplicate SDK clients from
+    leaking background threads when called concurrently.
+    """
     global _unleash_client
     if _unleash_client is not None:
         return _unleash_client
 
-    unleash_url = os.getenv("UNLEASH_URL", "")
-    if not unleash_url:
-        return None
+    with _init_lock:
+        # Re-check after acquiring lock
+        if _unleash_client is not None:
+            return _unleash_client
 
-    from UnleashClient import UnleashClient  # noqa: N811
+        unleash_url = os.getenv("UNLEASH_URL", "")
+        if not unleash_url:
+            return None
 
-    api_url = f"{unleash_url}/api"
-    api_token = os.getenv(
-        "UNLEASH_CLIENT_TOKEN",
-        "default:development.unleash-insecure-client-api-token",
-    )
-    app_name = os.getenv("UNLEASH_APP_NAME", "logiops")
+        from UnleashClient import UnleashClient  # noqa: N811
 
-    client = UnleashClient(
-        url=api_url,
-        app_name=app_name,
-        custom_headers={"Authorization": api_token},
-    )
-    client.initialize_client()
-    _unleash_client = client
-    logger.info("Unleash client initialised: %s", api_url)
-    return _unleash_client
+        api_url = f"{unleash_url}/api"
+        api_token = os.getenv(
+            "UNLEASH_CLIENT_TOKEN",
+            "default:development.unleash-insecure-client-api-token",
+        )
+        app_name = os.getenv("UNLEASH_APP_NAME", "logiops")
+
+        client = UnleashClient(
+            url=api_url,
+            app_name=app_name,
+            custom_headers={"Authorization": api_token},
+        )
+        client.initialize_client()
+        _unleash_client = client
+        logger.info("Unleash client initialised: %s", api_url)
+        return _unleash_client
 
 
 def is_enabled(flag_key: str, default: bool = False) -> bool:

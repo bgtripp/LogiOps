@@ -8,6 +8,7 @@ packages = [{include = "logiops"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+unleashclient = "^6.5.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"

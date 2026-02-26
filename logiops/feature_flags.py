@@ -67,5 +67,5 @@ def is_enabled(flag_key: str, default: bool = False) -> bool:
     """
     client = _get_unleash_client()
     if client is not None:
-        return client.is_enabled(flag_key, default_value=default)
+        return client.is_enabled(flag_key, fallback_function=lambda feature_name, context: default)
     return _FLAG_OVERRIDES.get(flag_key, default)

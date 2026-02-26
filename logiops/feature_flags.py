@@ -49,12 +49,13 @@ def _get_unleash_client():
     )
     app_name = os.getenv("UNLEASH_APP_NAME", "logiops")
 
-    _unleash_client = UnleashClient(
+    client = UnleashClient(
         url=api_url,
         app_name=app_name,
         custom_headers={"Authorization": api_token},
     )
-    _unleash_client.initialize_client()
+    client.initialize_client()
+    _unleash_client = client
     logger.info("Unleash client initialised: %s", api_url)
     return _unleash_client
 

@@ -28,7 +28,8 @@ _FLAG_OVERRIDES: dict[str, bool] = {
 # ---------------------------------------------------------------------------
 # Unleash SDK client (lazy-initialised)
 # ---------------------------------------------------------------------------
-_unleash_client = None  # type: ignore[assignment]
+_UNSET = object()
+_unleash_client = _UNSET  # type: ignore[assignment]
 _init_lock = threading.Lock()
 
 
@@ -39,16 +40,17 @@ def _get_unleash_client():
     leaking background threads when called concurrently.
     """
     global _unleash_client
-    if _unleash_client is not None:
+    if _unleash_client is not _UNSET:
         return _unleash_client
 
     with _init_lock:
         # Re-check after acquiring lock
-        if _unleash_client is not None:
+        if _unleash_client is not _UNSET:
             return _unleash_client
 
         unleash_url = os.getenv("UNLEASH_URL", "")
         if not unleash_url:
+            _unleash_client = None
             return None
 
         from UnleashClient import UnleashClient  # noqa: N811

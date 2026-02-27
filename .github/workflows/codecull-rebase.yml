@@ -45,6 +45,11 @@ jobs:
             RUNNING=$(echo "$RESPONSE" | jq -r '.running')
             echo "[$i/80] running=$RUNNING"
             if [ "$RUNNING" = "false" ]; then
+              ERROR=$(echo "$RESPONSE" | jq -r '.error // empty')
+              if [ -n "$ERROR" ]; then
+                echo "::error::Rebase failed: $ERROR"
+                exit 1
+              fi
               RESULTS=$(echo "$RESPONSE" | jq -r '.results')
               echo "Rebase completed!"
               echo "$RESPONSE" | jq .

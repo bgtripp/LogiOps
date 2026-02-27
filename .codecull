@@ -1,0 +1,5 @@
+# CodeCull callback configuration
+# Used by Devin cleanup sessions to notify the dashboard when PRs are ready.
+# This triggers the Phase 2 Slack notification to the flag maintainer.
+CODECULL_CALLBACK_URL=https://codecull-idduawlp.fly.dev/api/session-complete
+CODECULL_CALLBACK_TOKEN=mjJATskSm4M8kBm2KzPPRhp-bAbRled0fc9IB6ulJQxxCElg15ZAimmxVSxA5Ih-

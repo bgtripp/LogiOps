@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 # Static fallback (used when UNLEASH_URL is not configured)
 # ---------------------------------------------------------------------------
 _FLAG_OVERRIDES: dict[str, bool] = {
-    "enable-new-checkout-flow": True,      # Always-on for 120+ days  -> STALE
     "show-redesigned-dashboard": True,      # Always-on for 95 days   -> STALE
     "use-v2-pricing-engine": False,         # Always-off for 100 days -> STALE
     "rollout-search-suggestions": True,     # Active 50% rollout      -> SKIP

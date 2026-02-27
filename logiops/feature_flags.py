@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 # Static fallback (used when UNLEASH_URL is not configured)
 # ---------------------------------------------------------------------------
 _FLAG_OVERRIDES: dict[str, bool] = {
-    "show-redesigned-dashboard": True,      # Always-on for 95 days   -> STALE
     "rollout-search-suggestions": True,     # Active 50% rollout      -> SKIP
     "enable-dark-mode": True,               # Turned on 10 days ago   -> SKIP (too recent)
 }

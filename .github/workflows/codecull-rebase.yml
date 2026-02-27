@@ -1,0 +1,60 @@
+name: CodeCull Auto-Rebase
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  rebase-remaining-prs:
+    # Only run when a cleanup PR is merged (not just closed)
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.title, 'Remove stale flag')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger rebase via CodeCull API
+        env:
+          DASHBOARD_URL: "https://codecull-idduawlp.fly.dev"
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          echo "Cleanup PR #$PR_NUMBER merged: $PR_TITLE"
+          echo "Triggering auto-rebase of remaining cleanup PRs..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "$DASHBOARD_URL/api/rebase-next" \
+            -H "Authorization: Bearer ${{ secrets.SYNC_API_TOKEN }}")
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::error::Rebase trigger failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Poll rebase status
+        env:
+          DASHBOARD_URL: "https://codecull-idduawlp.fly.dev"
+        run: |
+          echo "Waiting for rebase job to complete..."
+          for i in $(seq 1 80); do
+            sleep 15
+            RESPONSE=$(curl -s \
+              "$DASHBOARD_URL/api/rebase-next/status" \
+              -H "Authorization: Bearer ${{ secrets.SYNC_API_TOKEN }}")
+            RUNNING=$(echo "$RESPONSE" | jq -r '.running')
+            echo "[$i/80] running=$RUNNING"
+            if [ "$RUNNING" = "false" ]; then
+              ERROR=$(echo "$RESPONSE" | jq -r '.error // empty')
+              if [ -n "$ERROR" ]; then
+                echo "::error::Rebase failed: $ERROR"
+                exit 1
+              fi
+              RESULTS=$(echo "$RESPONSE" | jq -r '.results')
+              echo "Rebase completed!"
+              echo "$RESPONSE" | jq .
+              exit 0
+            fi
+          done
+          echo "::error::Rebase timed out after 20 minutes"
+          exit 1
